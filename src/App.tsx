@@ -1,7 +1,10 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { LogOut, Mail, ShieldCheck, UserPlus } from 'lucide-react';
 import {
+  AccountStore,
   AudioEngine,
   ChartNote,
+  createDefaultSaveState,
   DEFAULT_KEYS,
   Difficulty,
   formatKeyLabel,
@@ -9,19 +12,25 @@ import {
   generateChart,
   getBestKey,
   GradeType,
+  hashPasscode,
   JUDGMENT_WINDOWS,
   JudgmentType,
   LANE_COLORS,
   LEAD_IN_SECONDS,
+  loadAccountStore,
   loadSaveState,
+  NEON_ACCENTS,
+  NeonAccent,
+  persistAccountStore,
   persistSaveState,
+  PlayerProfile,
   SaveState,
   Track,
   TRACKS,
 } from './rhythmEngine';
-import { OfflineIndicator, PWAInstallButton } from './PWAInstallButton';
+import { OfflineIndicator, PWAInstallButton, StandaloneHtmlExport } from './PWAInstallButton';
 
-type ScreenName = 'menu' | 'songs' | 'howto' | 'settings' | 'gameplay' | 'result';
+type ScreenName = 'auth' | 'menu' | 'songs' | 'howto' | 'settings' | 'gameplay' | 'result';
 
 interface Particle {
   x: number;
@@ -105,8 +114,25 @@ function roundRect(
 }
 
 export default function App() {
-  const [saveState, setSaveState] = useState<SaveState>(() => loadSaveState());
-  const [screen, setScreen] = useState<ScreenName>('menu');
+  const [accountStore, setAccountStore] = useState<AccountStore>(() => loadAccountStore());
+  const initialActiveProfile = accountStore.activeEmail
+    ? accountStore.profiles[accountStore.activeEmail] ?? null
+    : null;
+  const [saveState, setSaveState] = useState<SaveState>(() =>
+    initialActiveProfile ? initialActiveProfile.save : loadSaveState()
+  );
+  const [screen, setScreen] = useState<ScreenName>(() =>
+    initialActiveProfile ? 'menu' : 'auth'
+  );
+  const [authMode, setAuthMode] = useState<'register' | 'signin'>(() =>
+    Object.keys(accountStore.profiles).length > 0 ? 'signin' : 'register'
+  );
+  const [authUsername, setAuthUsername] = useState('');
+  const [authEmail, setAuthEmail] = useState('');
+  const [authPasscode, setAuthPasscode] = useState('');
+  const [authAccent, setAuthAccent] = useState<NeonAccent>('#00f0ff');
+  const [authError, setAuthError] = useState('');
+  const [authBusy, setAuthBusy] = useState(false);
   const [settingsReturn, setSettingsReturn] = useState<'menu' | 'pause'>('menu');
   const [selectedTrackId, setSelectedTrackId] = useState<Track['id']>(TRACKS[0].id);
   const [selectedDiff, setSelectedDiff] = useState<Difficulty>('normal');
@@ -178,11 +204,30 @@ export default function App() {
     lastHudSync: 0,
   });
 
+  const activeEmailRef = useRef<string | null>(accountStore.activeEmail);
+  activeEmailRef.current = accountStore.activeEmail;
+
   const updateSave = useCallback((updater: (prev: SaveState) => SaveState) => {
     setSaveState((prev) => {
       const next = updater(prev);
       saveRef.current = next;
       persistSaveState(next);
+      const email = activeEmailRef.current;
+      if (email) {
+        setAccountStore((prevStore) => {
+          const existing = prevStore.profiles[email];
+          if (!existing) return prevStore;
+          const nextStore: AccountStore = {
+            ...prevStore,
+            profiles: {
+              ...prevStore.profiles,
+              [email]: { ...existing, save: next },
+            },
+          };
+          persistAccountStore(nextStore);
+          return nextStore;
+        });
+      }
       return next;
     });
   }, []);
@@ -1088,6 +1133,115 @@ export default function App() {
     });
   };
 
+  const activeProfile = accountStore.activeEmail
+    ? accountStore.profiles[accountStore.activeEmail] ?? null
+    : null;
+  const savedProfilesList = Object.values(accountStore.profiles);
+
+  const handleAuthSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (authBusy) return;
+    setAuthError('');
+
+    const normalizedEmail = authEmail.trim().toLowerCase();
+    const trimmedUser = authUsername.trim();
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+      setAuthError('Please enter a valid email address.');
+      return;
+    }
+    if (authPasscode.length < 4) {
+      setAuthError('Passcode must be at least 4 characters.');
+      return;
+    }
+
+    setAuthBusy(true);
+    try {
+      const passHash = await hashPasscode(normalizedEmail, authPasscode);
+
+      if (authMode === 'register') {
+        if (trimmedUser.length < 2 || trimmedUser.length > 20) {
+          setAuthError('Gamer Tag must be 2 to 20 characters.');
+          return;
+        }
+        if (accountStore.profiles[normalizedEmail]) {
+          setAuthError('This email is already registered. Switch to Sign In.');
+          return;
+        }
+
+        // Preserve guest progress if this is the very first registered account on the device
+        const legacyGuest =
+          Object.keys(accountStore.profiles).length === 0 ? loadSaveState() : null;
+        const initialSave =
+          legacyGuest &&
+          (legacyGuest.songsCompleted > 0 || Object.keys(legacyGuest.bestScores).length > 0)
+            ? legacyGuest
+            : createDefaultSaveState();
+
+        const newProfile: PlayerProfile = {
+          email: normalizedEmail,
+          username: trimmedUser,
+          accent: authAccent,
+          passcodeHash: passHash,
+          createdAt: new Date().toISOString(),
+          save: initialSave,
+        };
+
+        const nextStore: AccountStore = {
+          activeEmail: normalizedEmail,
+          profiles: { ...accountStore.profiles, [normalizedEmail]: newProfile },
+        };
+        persistAccountStore(nextStore);
+        persistSaveState(initialSave);
+        setAccountStore(nextStore);
+        setSaveState(initialSave);
+        saveRef.current = initialSave;
+        setAuthPasscode('');
+        setScreen('menu');
+      } else {
+        const existing = accountStore.profiles[normalizedEmail];
+        if (!existing) {
+          setAuthError('No account found for this email. Switch to Register.');
+          return;
+        }
+        if (existing.passcodeHash !== passHash) {
+          setAuthError('Incorrect passcode. Please try again.');
+          return;
+        }
+
+        const nextStore: AccountStore = {
+          ...accountStore,
+          activeEmail: normalizedEmail,
+        };
+        persistAccountStore(nextStore);
+        persistSaveState(existing.save);
+        setAccountStore(nextStore);
+        setSaveState(existing.save);
+        saveRef.current = existing.save;
+        setAuthPasscode('');
+        setScreen('menu');
+      }
+    } finally {
+      setAuthBusy(false);
+    }
+  };
+
+  const handleLogout = () => {
+    const nextStore: AccountStore = {
+      ...accountStore,
+      activeEmail: null,
+    };
+    persistAccountStore(nextStore);
+    setAccountStore(nextStore);
+    setAuthMode('signin');
+    setAuthPasscode('');
+    setAuthError('');
+    if (activeProfile) {
+      setAuthEmail(activeProfile.email);
+    }
+    navigate('auth');
+  };
+
   return (
     <div
       className="relative w-full h-full overflow-hidden text-[#f5f7ff]"
@@ -1099,13 +1253,267 @@ export default function App() {
       <div className="bg-arcade-grid absolute inset-0 pointer-events-none z-0" />
       {screen !== 'gameplay' && <OfflineIndicator />}
 
+      {/* PLAYER REGISTRATION / SIGN IN */}
+      {screen === 'auth' && (
+        <section
+          aria-label="Player Registration"
+          className="relative z-10 w-full h-full flex items-center justify-center p-4 sm:p-6 overflow-y-auto"
+        >
+          <div className="w-full max-w-[460px] bg-[#101220]/92 border border-white/10 rounded-2xl p-5 sm:p-7 shadow-2xl backdrop-blur-md">
+            <div className="flex flex-col items-center text-center gap-2 mb-5">
+              <div className="flex items-end gap-1.5 h-6" aria-hidden="true">
+                <div className="w-1.5 h-3 rounded bg-[#00f0ff] eq-bar-1" />
+                <div className="w-1.5 h-5.5 rounded bg-[#a855f7] eq-bar-2" />
+                <div className="w-1.5 h-4 rounded bg-[#ff2a85] eq-bar-3" />
+                <div className="w-1.5 h-6 rounded bg-[#00f0ff] eq-bar-4" />
+              </div>
+              <h1
+                className="text-2xl sm:text-3xl font-black tracking-wider bg-clip-text text-transparent"
+                style={{
+                  backgroundImage:
+                    'linear-gradient(95deg, #ffffff 10%, #00f0ff 48%, #ff2a85 92%)',
+                }}
+              >
+                BEAT THE RHYTHM
+              </h1>
+              <p className="text-xs text-[#a2a9c8] tracking-widest uppercase">
+                Player Pass · Register or Sign In
+              </p>
+            </div>
+
+            <div
+              className="grid grid-cols-2 p-1 bg-[#07080f] border border-white/10 rounded-xl gap-1 mb-5"
+              role="tablist"
+              aria-label="Account Mode"
+            >
+              <button
+                type="button"
+                role="tab"
+                aria-selected={authMode === 'register'}
+                onClick={() => {
+                  setAuthMode('register');
+                  setAuthError('');
+                }}
+                className={`py-2 rounded-lg text-xs font-bold tracking-wider uppercase flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
+                  authMode === 'register'
+                    ? 'bg-[#00f0ff]/15 text-[#00f0ff] ring-1 ring-[#00f0ff]/40'
+                    : 'text-[#a2a9c8] hover:text-white'
+                }`}
+              >
+                <UserPlus className="w-3.5 h-3.5" />
+                Register
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={authMode === 'signin'}
+                onClick={() => {
+                  setAuthMode('signin');
+                  setAuthError('');
+                }}
+                className={`py-2 rounded-lg text-xs font-bold tracking-wider uppercase flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
+                  authMode === 'signin'
+                    ? 'bg-[#a855f7]/15 text-[#a855f7] ring-1 ring-[#a855f7]/40'
+                    : 'text-[#a2a9c8] hover:text-white'
+                }`}
+              >
+                <ShieldCheck className="w-3.5 h-3.5" />
+                Sign In
+              </button>
+            </div>
+
+            {authMode === 'signin' && savedProfilesList.length > 0 && (
+              <div className="mb-4">
+                <div className="text-[11px] text-[#6c7496] uppercase tracking-wider mb-2">
+                  Registered Profiles on Device
+                </div>
+                <div className="flex flex-col gap-1.5 max-h-28 overflow-y-auto">
+                  {savedProfilesList.map((prof) => (
+                    <button
+                      key={prof.email}
+                      type="button"
+                      onClick={() => {
+                        setAuthEmail(prof.email);
+                        setAuthError('');
+                      }}
+                      className={`w-full flex items-center justify-between gap-2 px-3 py-2 rounded-xl border text-left transition-colors cursor-pointer ${
+                        authEmail.trim().toLowerCase() === prof.email
+                          ? 'bg-[#171a2d] border-[#00f0ff]/55'
+                          : 'bg-[#07080f]/80 border-white/10 hover:border-white/25'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <span
+                          className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-black text-[#06070d] shrink-0"
+                          style={{ backgroundColor: prof.accent }}
+                        >
+                          {prof.username.charAt(0).toUpperCase()}
+                        </span>
+                        <div className="min-w-0">
+                          <div className="text-xs font-bold text-white truncate">
+                            {prof.username}
+                          </div>
+                          <div className="text-[11px] text-[#6c7496] truncate">{prof.email}</div>
+                        </div>
+                      </div>
+                      <span className="text-[11px] font-mono text-[#a2a9c8] shrink-0">
+                        {prof.save.songsCompleted} plays
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <form onSubmit={(e) => void handleAuthSubmit(e)} className="flex flex-col gap-3.5">
+              {authMode === 'register' && (
+                <div>
+                  <label
+                    htmlFor="auth-username"
+                    className="block text-[11px] text-[#a2a9c8] uppercase tracking-wider mb-1"
+                  >
+                    Gamer Tag / Player Name
+                  </label>
+                  <input
+                    id="auth-username"
+                    type="text"
+                    maxLength={20}
+                    required
+                    placeholder="e.g. NEON_ACE"
+                    value={authUsername}
+                    onChange={(e) => setAuthUsername(e.target.value)}
+                    className="w-full rounded-xl bg-[#07080f] border border-white/15 px-3.5 py-2.5 text-sm text-white placeholder-[#565e7d] focus:outline-none focus:border-[#00f0ff]"
+                  />
+                </div>
+              )}
+
+              <div>
+                <label
+                  htmlFor="auth-email"
+                  className="block text-[11px] text-[#a2a9c8] uppercase tracking-wider mb-1"
+                >
+                  Email Address
+                </label>
+                <div className="relative">
+                  <Mail className="w-4 h-4 text-[#6c7496] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <input
+                    id="auth-email"
+                    type="email"
+                    required
+                    placeholder="player@example.com"
+                    value={authEmail}
+                    onChange={(e) => setAuthEmail(e.target.value)}
+                    className="w-full rounded-xl bg-[#07080f] border border-white/15 pl-10 pr-3.5 py-2.5 text-sm text-white placeholder-[#565e7d] focus:outline-none focus:border-[#00f0ff]"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label
+                  htmlFor="auth-passcode"
+                  className="block text-[11px] text-[#a2a9c8] uppercase tracking-wider mb-1"
+                >
+                  Passcode / Password (min 4 chars)
+                </label>
+                <input
+                  id="auth-passcode"
+                  type="password"
+                  required
+                  minLength={4}
+                  placeholder="••••"
+                  value={authPasscode}
+                  onChange={(e) => setAuthPasscode(e.target.value)}
+                  className="w-full rounded-xl bg-[#07080f] border border-white/15 px-3.5 py-2.5 text-sm text-white placeholder-[#565e7d] focus:outline-none focus:border-[#00f0ff]"
+                />
+              </div>
+
+              {authMode === 'register' && (
+                <div>
+                  <span className="block text-[11px] text-[#a2a9c8] uppercase tracking-wider mb-1.5">
+                    Neon Badge Color
+                  </span>
+                  <div className="grid grid-cols-4 gap-2">
+                    {NEON_ACCENTS.map((item) => {
+                      const active = authAccent === item.color;
+                      return (
+                        <button
+                          key={item.color}
+                          type="button"
+                          onClick={() => setAuthAccent(item.color)}
+                          className={`py-2 px-2 rounded-xl border text-[11px] font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 cursor-pointer transition-all ${
+                            active
+                              ? 'bg-[#171a2d] border-white text-white shadow-[0_0_12px_rgba(255,255,255,0.18)]'
+                              : 'bg-[#07080f] border-white/10 text-[#a2a9c8] hover:border-white/25'
+                          }`}
+                        >
+                          <span
+                            className="w-2.5 h-2.5 rounded-sm shrink-0"
+                            style={{ backgroundColor: item.color }}
+                          />
+                          {item.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {authError && (
+                <div className="rounded-xl bg-[#fb7185]/12 border border-[#fb7185]/40 px-3 py-2 text-xs text-[#fb7185]">
+                  {authError}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={authBusy}
+                className="mt-1 w-full py-3.5 px-6 rounded-xl text-sm font-extrabold tracking-widest uppercase text-[#06070d] shadow-[0_0_24px_rgba(0,240,255,0.28)] hover:shadow-[0_0_32px_rgba(0,240,255,0.48)] active:scale-[0.98] transition-all cursor-pointer disabled:opacity-60"
+                style={{
+                  background: 'linear-gradient(135deg, #00f0ff 0%, #5b6cff 55%, #ff2a85 100%)',
+                }}
+              >
+                {authMode === 'register' ? 'REGISTER & PLAY' : 'SIGN IN & PLAY'}
+              </button>
+            </form>
+          </div>
+        </section>
+      )}
+
       {/* MAIN MENU */}
       {screen === 'menu' && (
         <section
           aria-label="Main Menu"
           className="relative z-10 w-full h-full flex items-center justify-center p-5 overflow-y-auto"
         >
-          <div className="w-full max-w-[520px] flex flex-col items-center text-center gap-7">
+          <div className="w-full max-w-[520px] flex flex-col items-center text-center gap-5">
+            {activeProfile && (
+              <div className="w-full flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-xl bg-[#101220]/90 border border-white/10">
+                <div className="flex items-center gap-2.5 min-w-0 text-left">
+                  <span
+                    className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-black text-[#06070d] shrink-0"
+                    style={{ backgroundColor: activeProfile.accent }}
+                  >
+                    {activeProfile.username.charAt(0).toUpperCase()}
+                  </span>
+                  <div className="min-w-0">
+                    <div className="text-xs font-bold text-white truncate">
+                      {activeProfile.username}
+                    </div>
+                    <div className="text-[11px] text-[#6c7496] truncate">
+                      {activeProfile.email}
+                    </div>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="px-2.5 py-1.5 rounded-lg border border-white/10 hover:border-[#fb7185]/50 text-[11px] font-bold tracking-wider uppercase text-[#a2a9c8] hover:text-[#fb7185] flex items-center gap-1 cursor-pointer shrink-0"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                  Switch
+                </button>
+              </div>
+            )}
             <div className="flex flex-col items-center gap-2.5">
               <div className="flex items-end gap-1.5 h-7 mb-1" aria-hidden="true">
                 <div className="w-1.5 h-3.5 rounded bg-[#00f0ff] eq-bar-1" />
@@ -1191,6 +1599,7 @@ export default function App() {
                 SETTINGS
               </button>
               <PWAInstallButton />
+              <StandaloneHtmlExport />
             </div>
           </div>
         </section>

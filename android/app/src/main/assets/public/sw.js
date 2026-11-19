@@ -90,21 +90,21 @@ define(['./workbox-7e5eb42b'], (function (workbox) { 'use strict';
     "revision": "cb2c73f1786e40228df88ca9458d1497"
   }, {
     "url": "index.html",
-    "revision": "8911fb7de52e90c3dd894ab57e93d4a2"
+    "revision": "9ea27b6e1cad30b060802b4599a31ae8"
   }, {
     "url": "icon.svg",
     "revision": "a1efd4239e5f6438450530eaf1628412"
   }, {
     "url": "beat-the-rhythm.html",
-    "revision": "8f92c191303532a16b2f0763a2ee01fe"
+    "revision": "3a853fa193ef55b0be96221e959c2e6a"
   }, {
     "url": "apple-touch-icon.png",
     "revision": "02c5f98edda645eaa0d66a4da288290b"
   }, {
-    "url": "assets/index-BiWfUxxf.css",
+    "url": "assets/index-Toi3nCbt.css",
     "revision": null
   }, {
-    "url": "assets/index-BWFMkYHY.js",
+    "url": "assets/index-B8lMYpR8.js",
     "revision": null
   }, {
     "url": "apple-touch-icon.png",

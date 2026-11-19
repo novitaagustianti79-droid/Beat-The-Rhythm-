@@ -26,6 +26,29 @@ export interface SaveState {
   songsCompleted: number;
 }
 
+export type NeonAccent = '#00f0ff' | '#a855f7' | '#ff2a85' | '#fbbf24';
+
+export interface PlayerProfile {
+  email: string;
+  username: string;
+  accent: NeonAccent;
+  passcodeHash: string;
+  createdAt: string;
+  save: SaveState;
+}
+
+export interface AccountStore {
+  activeEmail: string | null;
+  profiles: Record<string, PlayerProfile>;
+}
+
+export const NEON_ACCENTS: { color: NeonAccent; label: string }[] = [
+  { color: '#00f0ff', label: 'Cyan' },
+  { color: '#a855f7', label: 'Violet' },
+  { color: '#ff2a85', label: 'Magenta' },
+  { color: '#fbbf24', label: 'Gold' },
+];
+
 export interface ScoreStep {
   kick: boolean;
   snare: boolean;
@@ -61,6 +84,7 @@ export interface ChartNote {
 }
 
 export const STORAGE_KEY = 'beat_the_rhythm_v1';
+export const ACCOUNTS_STORAGE_KEY = 'beat_the_rhythm_accounts_v1';
 export const LEAD_IN_SECONDS = 1.8;
 export const LANE_COLORS = ['#00f0ff', '#a855f7', '#e879f9', '#ff2a85'] as const;
 export const DEFAULT_KEYS: [string, string, string, string] = ['d', 'f', 'j', 'k'];
@@ -83,24 +107,7 @@ export const DEFAULT_SETTINGS: GameSettings = {
   keyBindings: [...DEFAULT_KEYS],
 };
 
-export function loadSaveState(): SaveState {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      const keys =
-        Array.isArray(parsed.settings?.keyBindings) && parsed.settings.keyBindings.length === 4
-          ? (parsed.settings.keyBindings as [string, string, string, string])
-          : [...DEFAULT_KEYS];
-      return {
-        settings: { ...DEFAULT_SETTINGS, ...(parsed.settings || {}), keyBindings: keys },
-        bestScores: parsed.bestScores || {},
-        songsCompleted: Number(parsed.songsCompleted) || 0,
-      };
-    }
-  } catch {
-    // Ignore storage errors
-  }
+export function createDefaultSaveState(): SaveState {
   return {
     settings: { ...DEFAULT_SETTINGS, keyBindings: [...DEFAULT_KEYS] },
     bestScores: {},
@@ -108,9 +115,90 @@ export function loadSaveState(): SaveState {
   };
 }
 
+function normalizeSaveState(parsed: Partial<SaveState> | null | undefined): SaveState {
+  const keys: [string, string, string, string] =
+    Array.isArray(parsed?.settings?.keyBindings) && parsed.settings.keyBindings.length === 4
+      ? (parsed.settings.keyBindings as [string, string, string, string])
+      : ([...DEFAULT_KEYS] as [string, string, string, string]);
+  return {
+    settings: { ...DEFAULT_SETTINGS, ...(parsed?.settings || {}), keyBindings: keys },
+    bestScores: parsed?.bestScores || {},
+    songsCompleted: Number(parsed?.songsCompleted) || 0,
+  };
+}
+
+export function loadSaveState(): SaveState {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      return normalizeSaveState(JSON.parse(raw));
+    }
+  } catch {
+    // Ignore storage errors
+  }
+  return createDefaultSaveState();
+}
+
 export function persistSaveState(state: SaveState): void {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  } catch {
+    // Ignore storage errors
+  }
+}
+
+export async function hashPasscode(email: string, passcode: string): Promise<string> {
+  const input = `${email.trim().toLowerCase()}::${passcode}`;
+  try {
+    if (typeof crypto !== 'undefined' && crypto.subtle) {
+      const encoded = new TextEncoder().encode(input);
+      const digest = await crypto.subtle.digest('SHA-256', encoded);
+      return Array.from(new Uint8Array(digest))
+        .map((b) => b.toString(16).padStart(2, '0'))
+        .join('');
+    }
+  } catch {
+    // Fallback for file:// or restricted WebViews without crypto.subtle
+  }
+  let h1 = 0x811c9dc5;
+  let h2 = 0x9e3779b9;
+  for (let i = 0; i < input.length; i++) {
+    const c = input.charCodeAt(i);
+    h1 = Math.imul(h1 ^ c, 0x01000193);
+    h2 = Math.imul(h2 ^ (c + i), 0x85ebca6b);
+  }
+  return `${(h1 >>> 0).toString(16).padStart(8, '0')}${(h2 >>> 0).toString(16).padStart(8, '0')}`;
+}
+
+export function loadAccountStore(): AccountStore {
+  try {
+    const raw = localStorage.getItem(ACCOUNTS_STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw) as Partial<AccountStore>;
+      const profiles: Record<string, PlayerProfile> = {};
+      if (parsed.profiles && typeof parsed.profiles === 'object') {
+        Object.entries(parsed.profiles).forEach(([k, prof]) => {
+          if (prof && prof.email && prof.username) {
+            profiles[k] = {
+              ...prof,
+              save: normalizeSaveState(prof.save),
+            };
+          }
+        });
+      }
+      const activeEmail =
+        parsed.activeEmail && profiles[parsed.activeEmail] ? parsed.activeEmail : null;
+      return { activeEmail, profiles };
+    }
+  } catch {
+    // Ignore storage errors
+  }
+  return { activeEmail: null, profiles: {} };
+}
+
+export function persistAccountStore(store: AccountStore): void {
+  try {
+    localStorage.setItem(ACCOUNTS_STORAGE_KEY, JSON.stringify(store));
   } catch {
     // Ignore storage errors
   }

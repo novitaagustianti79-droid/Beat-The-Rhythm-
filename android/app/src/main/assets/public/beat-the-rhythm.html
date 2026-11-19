@@ -1008,15 +1008,225 @@
     .lane-pad { height: 74px; font-size: 1.2rem; }
     input[type="range"] { width: 105px; }
   }
+
+  /* Player Registration & Pass */
+  .auth-card {
+    width: 100%;
+    max-width: 460px;
+    background: rgba(16, 18, 32, 0.94);
+    border: 1px solid var(--border-subtle);
+    border-radius: 16px;
+    padding: 26px;
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.55), 0 0 40px rgba(0, 240, 255, 0.08);
+    backdrop-filter: blur(12px);
+  }
+  .auth-tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px;
+    padding: 4px;
+    background: var(--bg-deep);
+    border: 1px solid var(--border-subtle);
+    border-radius: 10px;
+    margin-bottom: 16px;
+  }
+  .auth-tab {
+    padding: 9px 12px;
+    border-radius: 7px;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+  }
+  .auth-tab.active-reg {
+    background: rgba(0, 240, 255, 0.14);
+    color: var(--cyan);
+    box-shadow: inset 0 0 0 1px rgba(0, 240, 255, 0.4);
+  }
+  .auth-tab.active-in {
+    background: rgba(168, 85, 247, 0.16);
+    color: var(--violet);
+    box-shadow: inset 0 0 0 1px rgba(168, 85, 247, 0.4);
+  }
+  .auth-field { margin-bottom: 12px; text-align: left; }
+  .auth-label {
+    display: block;
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 5px;
+  }
+  .auth-input {
+    width: 100%;
+    padding: 10px 13px;
+    border-radius: 10px;
+    background: var(--bg-deep);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    font-family: inherit;
+    outline: none;
+  }
+  .auth-input:focus { border-color: var(--cyan); }
+  .accent-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+  }
+  .accent-btn {
+    padding: 8px 6px;
+    border-radius: 9px;
+    background: var(--bg-deep);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-secondary);
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+  }
+  .accent-btn.selected {
+    background: var(--bg-elevated);
+    border-color: #ffffff;
+    color: #ffffff;
+  }
+  .accent-dot { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+  .auth-error {
+    display: none;
+    margin-bottom: 12px;
+    padding: 8px 12px;
+    border-radius: 9px;
+    background: rgba(251, 113, 133, 0.12);
+    border: 1px solid rgba(251, 113, 133, 0.4);
+    color: var(--crimson);
+    font-size: 0.78rem;
+    text-align: left;
+  }
+  .saved-profiles {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 112px;
+    overflow-y: auto;
+    margin-bottom: 14px;
+  }
+  .profile-chip {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 8px 11px;
+    border-radius: 10px;
+    background: rgba(7, 8, 15, 0.85);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-primary);
+    text-align: left;
+  }
+  .profile-chip.selected {
+    background: var(--bg-elevated);
+    border-color: rgba(0, 240, 255, 0.55);
+  }
+  .player-badge-avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 900;
+    font-size: 0.85rem;
+    color: #06070d;
+    flex-shrink: 0;
+  }
+  .player-pass-bar {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 14px;
+    border-radius: 12px;
+    background: rgba(16, 18, 32, 0.88);
+    border: 1px solid var(--border-subtle);
+  }
 </style>
 </head>
 <body>
 <div id="app">
   <div class="bg-grid"></div>
 
+  <!-- PLAYER REGISTRATION / SIGN IN -->
+  <section id="screen-auth" class="screen active" aria-label="Player Registration">
+    <div class="auth-card">
+      <div class="logo-block" style="margin-bottom:18px;text-align:center;">
+        <div class="logo-bars" aria-hidden="true">
+          <div class="logo-bar"></div>
+          <div class="logo-bar"></div>
+          <div class="logo-bar"></div>
+          <div class="logo-bar"></div>
+          <div class="logo-bar"></div>
+        </div>
+        <h1 class="logo-title" style="font-size:1.85rem;">BEAT THE RHYTHM</h1>
+        <p class="logo-subtitle" style="font-size:0.74rem;">Player Pass · Register or Sign In</p>
+      </div>
+
+      <div class="auth-tabs" role="tablist" aria-label="Account Mode">
+        <button type="button" class="auth-tab active-reg" id="tab-auth-register">REGISTER</button>
+        <button type="button" class="auth-tab" id="tab-auth-signin">SIGN IN</button>
+      </div>
+
+      <div id="saved-profiles-wrap" style="display:none;">
+        <div class="auth-label" style="margin-bottom:6px;">Registered Profiles on Device</div>
+        <div class="saved-profiles" id="saved-profiles-list"></div>
+      </div>
+
+      <form id="auth-form">
+        <div class="auth-field" id="field-username-wrap">
+          <label class="auth-label" for="auth-username">Gamer Tag / Player Name</label>
+          <input class="auth-input" id="auth-username" type="text" maxlength="20" placeholder="e.g. NEON_ACE" />
+        </div>
+        <div class="auth-field">
+          <label class="auth-label" for="auth-email">Email Address</label>
+          <input class="auth-input" id="auth-email" type="email" required placeholder="player@example.com" />
+        </div>
+        <div class="auth-field">
+          <label class="auth-label" for="auth-passcode">Passcode / Password (min 4 chars)</label>
+          <input class="auth-input" id="auth-passcode" type="password" required minlength="4" placeholder="••••" />
+        </div>
+        <div class="auth-field" id="field-accent-wrap">
+          <span class="auth-label">Neon Badge Color</span>
+          <div class="accent-grid" id="auth-accent-grid">
+            <button type="button" class="accent-btn selected" data-accent="#00f0ff"><span class="accent-dot" style="background:#00f0ff;"></span>Cyan</button>
+            <button type="button" class="accent-btn" data-accent="#a855f7"><span class="accent-dot" style="background:#a855f7;"></span>Violet</button>
+            <button type="button" class="accent-btn" data-accent="#ff2a85"><span class="accent-dot" style="background:#ff2a85;"></span>Magenta</button>
+            <button type="button" class="accent-btn" data-accent="#fbbf24"><span class="accent-dot" style="background:#fbbf24;"></span>Gold</button>
+          </div>
+        </div>
+        <div class="auth-error" id="auth-error"></div>
+        <button type="submit" class="btn btn-primary" id="btn-auth-submit" style="width:100%;margin-top:4px;">REGISTER &amp; PLAY</button>
+      </form>
+    </div>
+  </section>
+
   <!-- MAIN MENU -->
-  <section id="screen-menu" class="screen active" aria-label="Main Menu">
-    <div class="menu-container">
+  <section id="screen-menu" class="screen" aria-label="Main Menu">
+    <div class="menu-container" style="gap:20px;">
+      <div class="player-pass-bar" id="menu-player-bar" style="display:none;">
+        <div style="display:flex;align-items:center;gap:10px;min-width:0;text-align:left;">
+          <span class="player-badge-avatar" id="menu-player-avatar">A</span>
+          <div style="min-width:0;">
+            <div id="menu-player-name" style="font-size:0.84rem;font-weight:700;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">Player</div>
+            <div id="menu-player-email" style="font-size:0.7rem;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">player@example.com</div>
+          </div>
+        </div>
+        <button type="button" class="btn btn-ghost" id="btn-switch-player" style="padding:6px 10px;font-size:0.72rem;">SWITCH</button>
+      </div>
       <div class="logo-block">
         <div class="logo-bars" aria-hidden="true">
           <div class="logo-bar"></div>
@@ -1358,6 +1568,7 @@
      CONSTANTS & CONFIGURATION
      ========================================================= */
   const STORAGE_KEY = 'beat_the_rhythm_v1';
+  const ACCOUNTS_STORAGE_KEY = 'beat_the_rhythm_accounts_v1';
   const LEAD_IN_SECONDS = 1.8;
   const JUDGMENT_WINDOWS = {
     PERFECT: 0.040, // 40 ms
@@ -1380,22 +1591,9 @@
   };
 
   /* =========================================================
-     PERSISTENT STORAGE
+     PERSISTENT STORAGE & PLAYER ACCOUNTS
      ========================================================= */
-  let saveState = loadSaveState();
-
-  function loadSaveState() {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        return {
-          settings: { ...DEFAULT_SETTINGS, ...(parsed.settings || {}), keyBindings: Array.isArray(parsed.settings?.keyBindings) && parsed.settings.keyBindings.length === 4 ? parsed.settings.keyBindings : [...DEFAULT_KEYS] },
-          bestScores: parsed.bestScores || {},
-          songsCompleted: Number(parsed.songsCompleted) || 0
-        };
-      }
-    } catch (_) {}
+  function createDefaultSave() {
     return {
       settings: { ...DEFAULT_SETTINGS, keyBindings: [...DEFAULT_KEYS] },
       bestScores: {},
@@ -1403,10 +1601,85 @@
     };
   }
 
+  function normalizeSave(parsed) {
+    return {
+      settings: {
+        ...DEFAULT_SETTINGS,
+        ...(parsed?.settings || {}),
+        keyBindings: Array.isArray(parsed?.settings?.keyBindings) && parsed.settings.keyBindings.length === 4
+          ? parsed.settings.keyBindings
+          : [...DEFAULT_KEYS]
+      },
+      bestScores: parsed?.bestScores || {},
+      songsCompleted: Number(parsed?.songsCompleted) || 0
+    };
+  }
+
+  function loadSaveState() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) return normalizeSave(JSON.parse(raw));
+    } catch (_) {}
+    return createDefaultSave();
+  }
+
+  function loadAccountStore() {
+    try {
+      const raw = localStorage.getItem(ACCOUNTS_STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        const profiles = {};
+        if (parsed.profiles && typeof parsed.profiles === 'object') {
+          Object.entries(parsed.profiles).forEach(([k, prof]) => {
+            if (prof && prof.email && prof.username) {
+              profiles[k] = { ...prof, save: normalizeSave(prof.save) };
+            }
+          });
+        }
+        const activeEmail = parsed.activeEmail && profiles[parsed.activeEmail] ? parsed.activeEmail : null;
+        return { activeEmail, profiles };
+      }
+    } catch (_) {}
+    return { activeEmail: null, profiles: {} };
+  }
+
+  function persistAccountStore() {
+    try {
+      localStorage.setItem(ACCOUNTS_STORAGE_KEY, JSON.stringify(accountStore));
+    } catch (_) {}
+  }
+
+  async function hashPasscode(email, passcode) {
+    const input = `${email.trim().toLowerCase()}::${passcode}`;
+    try {
+      if (window.crypto && window.crypto.subtle) {
+        const encoded = new TextEncoder().encode(input);
+        const digest = await window.crypto.subtle.digest('SHA-256', encoded);
+        return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, '0')).join('');
+      }
+    } catch (_) {}
+    let h1 = 0x811c9dc5, h2 = 0x9e3779b9;
+    for (let i = 0; i < input.length; i++) {
+      const c = input.charCodeAt(i);
+      h1 = Math.imul(h1 ^ c, 0x01000193);
+      h2 = Math.imul(h2 ^ (c + i), 0x85ebca6b);
+    }
+    return (h1 >>> 0).toString(16).padStart(8, '0') + (h2 >>> 0).toString(16).padStart(8, '0');
+  }
+
+  let accountStore = loadAccountStore();
+  let saveState = accountStore.activeEmail && accountStore.profiles[accountStore.activeEmail]
+    ? accountStore.profiles[accountStore.activeEmail].save
+    : loadSaveState();
+
   function persistSaveState() {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(saveState));
     } catch (_) {}
+    if (accountStore.activeEmail && accountStore.profiles[accountStore.activeEmail]) {
+      accountStore.profiles[accountStore.activeEmail].save = saveState;
+      persistAccountStore();
+    }
   }
 
   function getBestKey(trackId, diff) {
@@ -2013,7 +2286,9 @@
   /* =========================================================
      GAME STATE & RUNTIME
      ========================================================= */
-  let currentScreen = 'menu';
+  let currentScreen = accountStore.activeEmail ? 'menu' : 'auth';
+  let authMode = Object.keys(accountStore.profiles).length > 0 ? 'signin' : 'register';
+  let authAccent = '#00f0ff';
   let settingsReturnTarget = 'menu';
   let selectedTrackId = TRACKS[0].id;
   let selectedDiff = 'normal';
@@ -2052,6 +2327,7 @@
      DOM REFERENCES
      ========================================================= */
   const screens = {
+    auth: document.getElementById('screen-auth'),
     menu: document.getElementById('screen-menu'),
     songs: document.getElementById('screen-songs'),
     howto: document.getElementById('screen-howto'),
@@ -2066,7 +2342,7 @@
   const pauseModal = document.getElementById('pause-modal');
 
   /* =========================================================
-     SCREEN NAVIGATION
+     SCREEN NAVIGATION & AUTH UI
      ========================================================= */
   function showScreen(name) {
     if (currentScreen === 'songs' && name !== 'songs') {
@@ -2076,10 +2352,65 @@
     Object.entries(screens).forEach(([k, el]) => {
       el.classList.toggle('active', k === name);
     });
+    if (name === 'auth') renderAuthUI();
     if (name === 'menu') updateMainMenuUI();
     if (name === 'songs') renderSongList();
     if (name === 'howto') updateHowToKeys();
     if (name === 'settings') syncSettingsUI();
+  }
+
+  function renderAuthUI() {
+    const isReg = authMode === 'register';
+    document.getElementById('tab-auth-register').className = `auth-tab${isReg ? ' active-reg' : ''}`;
+    document.getElementById('tab-auth-signin').className = `auth-tab${!isReg ? ' active-in' : ''}`;
+    document.getElementById('field-username-wrap').style.display = isReg ? 'block' : 'none';
+    document.getElementById('field-accent-wrap').style.display = isReg ? 'block' : 'none';
+    document.getElementById('btn-auth-submit').textContent = isReg ? 'REGISTER & PLAY' : 'SIGN IN & PLAY';
+
+    const errEl = document.getElementById('auth-error');
+    errEl.style.display = 'none';
+    errEl.textContent = '';
+
+    const profiles = Object.values(accountStore.profiles);
+    const wrap = document.getElementById('saved-profiles-wrap');
+    const list = document.getElementById('saved-profiles-list');
+    if (!isReg && profiles.length > 0) {
+      wrap.style.display = 'block';
+      list.innerHTML = '';
+      const currentEmail = document.getElementById('auth-email').value.trim().toLowerCase();
+      profiles.forEach(prof => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = `profile-chip${currentEmail === prof.email ? ' selected' : ''}`;
+        const av = document.createElement('span');
+        av.className = 'player-badge-avatar';
+        av.style.backgroundColor = prof.accent || '#00f0ff';
+        av.textContent = prof.username.charAt(0).toUpperCase();
+        const meta = document.createElement('div');
+        meta.style.cssText = 'flex:1;min-width:0;';
+        const nm = document.createElement('div');
+        nm.style.cssText = 'font-size:0.78rem;font-weight:700;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+        nm.textContent = prof.username;
+        const em = document.createElement('div');
+        em.style.cssText = 'font-size:0.68rem;color:#6c7496;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;';
+        em.textContent = prof.email;
+        meta.appendChild(nm);
+        meta.appendChild(em);
+        const plays = document.createElement('span');
+        plays.style.cssText = 'font-size:0.68rem;font-family:var(--font-mono);color:#a2a9c8;flex-shrink:0;';
+        plays.textContent = `${prof.save.songsCompleted} plays`;
+        btn.appendChild(av);
+        btn.appendChild(meta);
+        btn.appendChild(plays);
+        btn.addEventListener('click', () => {
+          document.getElementById('auth-email').value = prof.email;
+          renderAuthUI();
+        });
+        list.appendChild(btn);
+      });
+    } else {
+      wrap.style.display = 'none';
+    }
   }
 
   function updateMainMenuUI() {
@@ -2091,6 +2422,19 @@
     document.getElementById('menu-songs-completed').textContent = saveState.songsCompleted;
     const t = TRACKS.find(tr => tr.id === selectedTrackId) || TRACKS[0];
     document.getElementById('menu-selected-track').textContent = `${t.name} — ${selectedDiff.toUpperCase()}`;
+
+    const prof = accountStore.activeEmail ? accountStore.profiles[accountStore.activeEmail] : null;
+    const bar = document.getElementById('menu-player-bar');
+    if (prof) {
+      bar.style.display = 'flex';
+      const av = document.getElementById('menu-player-avatar');
+      av.textContent = prof.username.charAt(0).toUpperCase();
+      av.style.backgroundColor = prof.accent || '#00f0ff';
+      document.getElementById('menu-player-name').textContent = prof.username;
+      document.getElementById('menu-player-email').textContent = prof.email;
+    } else {
+      bar.style.display = 'none';
+    }
   }
 
   function updateHowToKeys() {
@@ -3195,8 +3539,108 @@
     }
   });
 
+  /* =========================================================
+     AUTH FORM & PROFILE SWITCHING WIRING
+     ========================================================= */
+  document.getElementById('tab-auth-register').addEventListener('click', () => {
+    authMode = 'register';
+    renderAuthUI();
+  });
+  document.getElementById('tab-auth-signin').addEventListener('click', () => {
+    authMode = 'signin';
+    renderAuthUI();
+  });
+  document.querySelectorAll('#auth-accent-grid .accent-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      authAccent = btn.dataset.accent;
+      document.querySelectorAll('#auth-accent-grid .accent-btn').forEach(b => {
+        b.classList.toggle('selected', b === btn);
+      });
+    });
+  });
+
+  document.getElementById('auth-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const errEl = document.getElementById('auth-error');
+    const showErr = (msg) => {
+      errEl.textContent = msg;
+      errEl.style.display = 'block';
+    };
+
+    const email = document.getElementById('auth-email').value.trim().toLowerCase();
+    const username = document.getElementById('auth-username').value.trim();
+    const passcode = document.getElementById('auth-passcode').value;
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      showErr('Please enter a valid email address.');
+      return;
+    }
+    if (passcode.length < 4) {
+      showErr('Passcode must be at least 4 characters.');
+      return;
+    }
+
+    const passHash = await hashPasscode(email, passcode);
+
+    if (authMode === 'register') {
+      if (username.length < 2 || username.length > 20) {
+        showErr('Gamer Tag must be 2 to 20 characters.');
+        return;
+      }
+      if (accountStore.profiles[email]) {
+        showErr('This email is already registered. Switch to Sign In.');
+        return;
+      }
+      const legacy = Object.keys(accountStore.profiles).length === 0 ? loadSaveState() : null;
+      const initialSave = legacy && (legacy.songsCompleted > 0 || Object.keys(legacy.bestScores).length > 0)
+        ? legacy
+        : createDefaultSave();
+
+      accountStore.profiles[email] = {
+        email,
+        username,
+        accent: authAccent,
+        passcodeHash: passHash,
+        createdAt: new Date().toISOString(),
+        save: initialSave
+      };
+      accountStore.activeEmail = email;
+      saveState = initialSave;
+      persistAccountStore();
+      persistSaveState();
+      document.getElementById('auth-passcode').value = '';
+      showScreen('menu');
+    } else {
+      const existing = accountStore.profiles[email];
+      if (!existing) {
+        showErr('No account found for this email. Switch to Register.');
+        return;
+      }
+      if (existing.passcodeHash !== passHash) {
+        showErr('Incorrect passcode. Please try again.');
+        return;
+      }
+      accountStore.activeEmail = email;
+      saveState = existing.save;
+      persistAccountStore();
+      persistSaveState();
+      document.getElementById('auth-passcode').value = '';
+      showScreen('menu');
+    }
+  });
+
+  document.getElementById('btn-switch-player').addEventListener('click', () => {
+    const prevEmail = accountStore.activeEmail;
+    accountStore.activeEmail = null;
+    persistAccountStore();
+    authMode = 'signin';
+    document.getElementById('auth-passcode').value = '';
+    if (prevEmail) document.getElementById('auth-email').value = prevEmail;
+    showScreen('auth');
+  });
+
   // Initial render
-  updateMainMenuUI();
+  showScreen(accountStore.activeEmail ? 'menu' : 'auth');
   updateTouchPadLabels();
 })();
 </script>
