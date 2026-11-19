@@ -76,7 +76,7 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 20px;
+    padding: calc(16px + env(safe-area-inset-top, 0px)) 16px calc(16px + env(safe-area-inset-bottom, 0px));
     opacity: 0;
     visibility: hidden;
     transform: translateY(10px) scale(0.99);
@@ -102,6 +102,7 @@
   .panel {
     width: 100%;
     max-width: 780px;
+    margin: auto 0;
     background: rgba(16, 18, 32, 0.9);
     border: 1px solid var(--border-subtle);
     border-radius: 16px;
@@ -654,23 +655,34 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
-    padding: 12px 18px;
-    background: linear-gradient(180deg, rgba(7, 8, 15, 0.92) 0%, rgba(7, 8, 15, 0.55) 100%);
+    gap: 14px;
+    padding: calc(10px + env(safe-area-inset-top, 0px)) 16px 10px;
+    background: linear-gradient(180deg, rgba(7, 8, 15, 0.94) 0%, rgba(7, 8, 15, 0.6) 100%);
     border-bottom: 1px solid var(--border-subtle);
     flex-shrink: 0;
+  }
+
+  .hud-top-row {
+    display: contents;
   }
 
   .hud-track {
     display: flex;
     flex-direction: column;
     gap: 5px;
-    min-width: 160px;
-    max-width: 280px;
+    min-width: 150px;
+    max-width: 260px;
+  }
+
+  .hud-track-head {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
   }
 
   .hud-track-title {
-    font-size: 0.95rem;
+    font-size: 0.92rem;
     font-weight: 700;
     color: var(--text-primary);
     white-space: nowrap;
@@ -679,15 +691,16 @@
   }
 
   .hud-track-meta {
-    font-size: 0.76rem;
+    font-size: 0.74rem;
     color: var(--text-secondary);
     font-family: var(--font-mono);
     font-variant-numeric: tabular-nums;
+    white-space: nowrap;
   }
 
   .progress-bar-track {
     width: 100%;
-    height: 5px;
+    height: 4px;
     background: rgba(255, 255, 255, 0.08);
     border-radius: 3px;
     overflow: hidden;
@@ -704,28 +717,32 @@
   .hud-center-stats {
     display: flex;
     align-items: center;
-    gap: 24px;
+    gap: 22px;
+    order: 2;
   }
 
   .hud-metric {
     display: flex;
     flex-direction: column;
     align-items: center;
+    min-width: 0;
   }
 
   .hud-metric-label {
-    font-size: 0.68rem;
+    font-size: 0.65rem;
     letter-spacing: 0.1em;
     text-transform: uppercase;
     color: var(--text-muted);
+    line-height: 1.15;
   }
 
   .hud-metric-value {
     font-family: var(--font-mono);
     font-variant-numeric: tabular-nums;
-    font-size: 1.25rem;
+    font-size: 1.2rem;
     font-weight: 700;
     color: var(--text-primary);
+    line-height: 1.2;
   }
 
   .hud-judgments-inline {
@@ -754,6 +771,7 @@
     align-items: center;
     gap: 8px;
     flex-shrink: 0;
+    order: 3;
   }
 
   .hud-btn {
@@ -994,18 +1012,54 @@
   }
 
   /* Responsive adjustments */
-  @media (max-width: 720px) {
+  @media (max-width: 760px) {
     .panel { padding: 18px; }
     .guide-grid { grid-template-columns: 1fr; }
+    .hud-top {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 6px;
+      padding: calc(8px + env(safe-area-inset-top, 0px)) 12px 8px;
+    }
+    .hud-top-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      width: 100%;
+      min-width: 0;
+    }
+    .hud-track {
+      flex: 1;
+      min-width: 0;
+      max-width: none;
+      gap: 4px;
+    }
+    .hud-track-head {
+      flex-direction: row;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 6px;
+    }
+    .hud-track-title { font-size: 0.8rem; }
+    .hud-track-meta { font-size: 0.66rem; flex-shrink: 0; }
+    .hud-controls { order: 0; gap: 6px; }
+    .hud-btn { padding: 6px 9px; font-size: 0.68rem; }
     .hud-judgments-inline { display: none; }
-    .hud-center-stats { gap: 14px; }
-    .hud-track { min-width: 110px; }
-    .hud-metric-value { font-size: 1.05rem; }
+    .hud-center-stats {
+      order: 0;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      width: 100%;
+    }
+    .hud-metric-label { font-size: 0.58rem; }
+    .hud-metric-value { font-size: 0.96rem; }
     .song-card { flex-direction: column; align-items: stretch; }
     .song-right { justify-content: space-between; }
     .result-stats-grid { grid-template-columns: 1fr 1fr; }
     .result-breakdown { grid-template-columns: repeat(2, 1fr); }
-    .lane-pad { height: 74px; font-size: 1.2rem; }
+    .lane-pad { height: 58px; font-size: 1.12rem; }
     input[type="range"] { width: 105px; }
   }
 
@@ -1013,6 +1067,7 @@
   .auth-card {
     width: 100%;
     max-width: 460px;
+    margin: auto 0;
     background: rgba(16, 18, 32, 0.94);
     border: 1px solid var(--border-subtle);
     border-radius: 16px;
@@ -1437,10 +1492,19 @@
   <section id="screen-gameplay" class="screen gameplay-screen" aria-label="Gameplay">
     <div class="gameplay-wrapper">
       <header class="hud-top">
-        <div class="hud-track">
-          <div class="hud-track-title" id="hud-title">Neon Pulse</div>
-          <div class="hud-track-meta"><span id="hud-diff">NORMAL</span> · <span id="hud-time">0:00 / 0:52</span></div>
-          <div class="progress-bar-track"><div class="progress-bar-fill" id="hud-progress"></div></div>
+        <div class="hud-top-row">
+          <div class="hud-track">
+            <div class="hud-track-head">
+              <div class="hud-track-title" id="hud-title">Neon Pulse</div>
+              <div class="hud-track-meta"><span id="hud-diff">NORMAL</span> · <span id="hud-time">0:00/0:52</span></div>
+            </div>
+            <div class="progress-bar-track"><div class="progress-bar-fill" id="hud-progress"></div></div>
+          </div>
+
+          <div class="hud-controls">
+            <button class="hud-btn" id="btn-hud-mute">MUTE</button>
+            <button class="hud-btn" id="btn-hud-pause">PAUSE</button>
+          </div>
         </div>
 
         <div class="hud-center-stats">
@@ -1462,11 +1526,6 @@
             <div class="j-chip"><span>GOOD</span><span class="j-good" id="hud-good">0</span></div>
             <div class="j-chip"><span>MISS</span><span class="j-miss" id="hud-miss">0</span></div>
           </div>
-        </div>
-
-        <div class="hud-controls">
-          <button class="hud-btn" id="btn-hud-mute">MUTE</button>
-          <button class="hud-btn" id="btn-hud-pause">PAUSE</button>
         </div>
       </header>
 
@@ -2225,21 +2284,26 @@
     playMilestoneSfx(combo) {
       if (!this.ctx || !this.sfxGain || this.ctx.state !== 'running') return;
       const now = this.ctx.currentTime;
-      const notes = combo >= 200 ? [523.25, 659.25, 783.99, 1046.5] : combo >= 100 ? [440, 554.37, 659.25, 880] : [392, 493.88, 587.33];
+      // Unified celebratory SFX for all >=100 combo milestones; lighter chimes for 20 and 50/75
+      const notes = combo >= 100
+        ? [523.25, 659.25, 783.99, 1046.5]
+        : combo >= 50
+          ? [440, 554.37, 659.25]
+          : [392, 587.33];
       notes.forEach((freq, idx) => {
         const osc = this.ctx.createOscillator();
         const g = this.ctx.createGain();
-        const start = now + idx * 0.035;
+        const start = now + idx * 0.032;
         osc.type = 'triangle';
         osc.frequency.setValueAtTime(freq, start);
-        osc.frequency.exponentialRampToValueAtTime(freq * 1.04, start + 0.28);
+        osc.frequency.exponentialRampToValueAtTime(freq * 1.04, start + 0.25);
         g.gain.setValueAtTime(0.001, start);
-        g.gain.linearRampToValueAtTime(0.16, start + 0.02);
-        g.gain.exponentialRampToValueAtTime(0.001, start + 0.34);
+        g.gain.linearRampToValueAtTime(combo >= 100 ? 0.16 : 0.13, start + 0.018);
+        g.gain.exponentialRampToValueAtTime(0.001, start + 0.3);
         osc.connect(g);
         g.connect(this.sfxGain);
         osc.start(start);
-        osc.stop(start + 0.36);
+        osc.stop(start + 0.32);
       });
     }
 
@@ -2674,7 +2738,7 @@
     const clampedTime = Math.max(0, Math.min(track.duration, songTime));
     const pct = (clampedTime / track.duration) * 100;
     document.getElementById('hud-progress').style.width = `${pct.toFixed(2)}%`;
-    document.getElementById('hud-time').textContent = `${formatTime(clampedTime)} / ${formatTime(track.duration)}`;
+    document.getElementById('hud-time').textContent = `${formatTime(clampedTime)}/${formatTime(track.duration)}`;
     document.getElementById('hud-title').textContent = track.name;
     document.getElementById('hud-diff').textContent = diff.toUpperCase();
   }
@@ -2764,7 +2828,7 @@
 
   function getHighwayMetrics(viewW, viewH) {
     const laneCount = 4;
-    const hwWidth = Math.min(460, Math.max(260, viewW * 0.88));
+    const hwWidth = Math.min(460, Math.max(240, viewW * 0.9));
     const hwLeft = (viewW - hwWidth) / 2;
     const laneW = hwWidth / laneCount;
     const hitY = viewH * 0.84;
@@ -2834,13 +2898,24 @@
         }
       }
 
-      const isMilestone = game.combo === 50 || game.combo === 100 || (game.combo >= 200 && game.combo % 100 === 0);
+      const reducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      // Milestones: 20, 50, 75, 100, 150, 200 (and every 50 above 200)
+      const isMilestone =
+        game.combo === 20 ||
+        game.combo === 50 ||
+        game.combo === 75 ||
+        game.combo === 100 ||
+        game.combo === 150 ||
+        (game.combo >= 200 && game.combo % 50 === 0);
+
       if (isMilestone) {
         audio.playMilestoneSfx(game.combo);
         if (navigator.vibrate) {
-          try { navigator.vibrate(game.combo >= 100 ? [35, 25, 50] : 35); } catch (_) {}
+          try { navigator.vibrate(game.combo >= 100 ? [30, 20, 40] : 28); } catch (_) {}
         }
-        const tier = game.combo >= 200 ? 3 : game.combo >= 100 ? 2 : 1;
+        // All >= 100 milestones share tier 3 SFX & gold peak visual style
+        const tier = game.combo >= 100 ? 3 : game.combo >= 50 ? 2 : 1;
         const centerX = m.hwLeft + m.hwWidth / 2;
         const centerY = viewH * 0.32;
         const milestoneColor = tier === 3 ? '#fde047' : tier === 2 ? '#ff2a85' : '#00f0ff';
@@ -2853,12 +2928,11 @@
           life: 1.0
         });
 
-        const reducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         if (saveState.settings.vfxEnabled && !reducedMotion) {
-          game.shakeDuration = tier === 3 ? 0.6 : tier === 2 ? 0.48 : 0.38;
+          game.shakeDuration = tier === 3 ? 0.34 : tier === 2 ? 0.26 : 0.2;
           game.shakeTime = game.shakeDuration;
-          game.shakeIntensity = tier === 3 ? 18 : tier === 2 ? 13 : 8;
-          game.milestoneFlash = tier === 3 ? 0.95 : tier === 2 ? 0.75 : 0.55;
+          game.shakeIntensity = tier === 3 ? 9.0 : tier === 2 ? 6.5 : 4.5;
+          game.milestoneFlash = tier === 3 ? 0.85 : tier === 2 ? 0.65 : 0.45;
         }
 
         if (saveState.settings.vfxEnabled) {
@@ -2869,26 +2943,31 @@
               x: centerX,
               y: centerY,
               radius: 24 + r * 14,
-              maxRadius: m.hwWidth * (0.58 + r * 0.18),
+              maxRadius: m.hwWidth * (0.52 + r * 0.16),
               color: palette[r % palette.length],
               life: 1.0
             });
           }
-          const burstCount = tier === 3 ? 110 : tier === 2 ? 75 : 48;
+          const burstCount = tier === 3 ? 72 : tier === 2 ? 46 : 28;
           for (let i = 0; i < burstCount; i++) {
             const angle = (Math.PI * 2 * i) / burstCount + (Math.random() - 0.5) * 0.25;
-            const speed = 150 + Math.random() * (tier === 3 ? 420 : tier === 2 ? 340 : 260);
+            const speed = 140 + Math.random() * (tier === 3 ? 340 : tier === 2 ? 270 : 210);
             game.particles.push({
               x: centerX,
               y: centerY,
               vx: Math.cos(angle) * speed,
               vy: Math.sin(angle) * speed - 40,
-              size: 3.5 + Math.random() * (tier === 3 ? 4.5 : 3.2),
+              size: 3.2 + Math.random() * (tier === 3 ? 3.8 : 2.8),
               color: palette[i % palette.length],
-              life: 1.15
+              life: 1.1
             });
           }
         }
+      } else if (saveState.settings.vfxEnabled && !reducedMotion && game.shakeTime <= 0.04) {
+        // Subtle micro screen-shake on every combo hit without obscuring falling notes
+        game.shakeDuration = type === 'PERFECT' ? 0.085 : type === 'GREAT' ? 0.075 : 0.065;
+        game.shakeTime = game.shakeDuration;
+        game.shakeIntensity = type === 'PERFECT' ? 2.0 : type === 'GREAT' ? 1.4 : 0.9;
       }
     }
   }

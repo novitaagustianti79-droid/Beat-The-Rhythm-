@@ -724,22 +724,28 @@ export class AudioEngine {
   playMilestoneSfx(combo: number): void {
     if (!this.ctx || !this.sfxGain || this.ctx.state !== 'running') return;
     const now = this.ctx.currentTime;
-    const notes = combo >= 200 ? [523.25, 659.25, 783.99, 1046.5] : combo >= 100 ? [440, 554.37, 659.25, 880] : [392, 493.88, 587.33];
+    // Unified celebratory SFX for all >=100 combo milestones; lighter chimes for 20 and 50/75
+    const notes =
+      combo >= 100
+        ? [523.25, 659.25, 783.99, 1046.5]
+        : combo >= 50
+          ? [440, 554.37, 659.25]
+          : [392, 587.33];
     notes.forEach((freq, idx) => {
       if (!this.ctx || !this.sfxGain) return;
       const osc = this.ctx.createOscillator();
       const g = this.ctx.createGain();
-      const start = now + idx * 0.035;
+      const start = now + idx * 0.032;
       osc.type = 'triangle';
       osc.frequency.setValueAtTime(freq, start);
-      osc.frequency.exponentialRampToValueAtTime(freq * 1.04, start + 0.28);
+      osc.frequency.exponentialRampToValueAtTime(freq * 1.04, start + 0.25);
       g.gain.setValueAtTime(0.001, start);
-      g.gain.linearRampToValueAtTime(0.16, start + 0.02);
-      g.gain.exponentialRampToValueAtTime(0.001, start + 0.34);
+      g.gain.linearRampToValueAtTime(combo >= 100 ? 0.16 : 0.13, start + 0.018);
+      g.gain.exponentialRampToValueAtTime(0.001, start + 0.3);
       osc.connect(g);
       g.connect(this.sfxGain);
       osc.start(start);
-      osc.stop(start + 0.36);
+      osc.stop(start + 0.32);
     });
   }
 

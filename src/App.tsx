@@ -263,7 +263,7 @@ export default function App() {
   }, []);
 
   const getHighwayMetrics = (viewW: number, viewH: number) => {
-    const hwWidth = Math.min(460, Math.max(260, viewW * 0.88));
+    const hwWidth = Math.min(460, Math.max(240, viewW * 0.9));
     const hwLeft = (viewW - hwWidth) / 2;
     const laneW = hwWidth / 4;
     const hitY = viewH * 0.84;
@@ -335,23 +335,31 @@ export default function App() {
           }
         }
 
-        // Trigger special screen-shake & particle explosion on combo milestones (50, 100, 200, 300, ...)
+        const reducedMotion =
+          typeof window !== 'undefined' &&
+          window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+
+        // Milestones: 20, 50, 75, 100, 150, 200 (and every 50 above 200)
         const isMilestone =
+          g.combo === 20 ||
           g.combo === 50 ||
+          g.combo === 75 ||
           g.combo === 100 ||
-          (g.combo >= 200 && g.combo % 100 === 0);
+          g.combo === 150 ||
+          (g.combo >= 200 && g.combo % 50 === 0);
 
         if (isMilestone) {
           audioRef.current?.playMilestoneSfx(g.combo);
           if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
             try {
-              navigator.vibrate(g.combo >= 100 ? [35, 25, 50] : 35);
+              navigator.vibrate(g.combo >= 100 ? [30, 20, 40] : 28);
             } catch {
               // Ignore vibration errors
             }
           }
 
-          const tier = g.combo >= 200 ? 3 : g.combo >= 100 ? 2 : 1;
+          // All >= 100 milestones share tier 3 SFX & gold peak visual style
+          const tier = g.combo >= 100 ? 3 : g.combo >= 50 ? 2 : 1;
           const centerX = m.hwLeft + m.hwWidth / 2;
           const centerY = viewH * 0.32;
           const milestoneColor =
@@ -365,15 +373,11 @@ export default function App() {
             life: 1.0,
           });
 
-          const reducedMotion =
-            typeof window !== 'undefined' &&
-            window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-
           if (saveRef.current.settings.vfxEnabled && !reducedMotion) {
-            g.shakeDuration = tier === 3 ? 0.6 : tier === 2 ? 0.48 : 0.38;
+            g.shakeDuration = tier === 3 ? 0.34 : tier === 2 ? 0.26 : 0.2;
             g.shakeTime = g.shakeDuration;
-            g.shakeIntensity = tier === 3 ? 18 : tier === 2 ? 13 : 8;
-            g.milestoneFlash = tier === 3 ? 0.95 : tier === 2 ? 0.75 : 0.55;
+            g.shakeIntensity = tier === 3 ? 9.0 : tier === 2 ? 6.5 : 4.5;
+            g.milestoneFlash = tier === 3 ? 0.85 : tier === 2 ? 0.65 : 0.45;
           }
 
           if (saveRef.current.settings.vfxEnabled) {
@@ -384,27 +388,36 @@ export default function App() {
                 x: centerX,
                 y: centerY,
                 radius: 24 + r * 14,
-                maxRadius: m.hwWidth * (0.58 + r * 0.18),
+                maxRadius: m.hwWidth * (0.52 + r * 0.16),
                 color: palette[r % palette.length],
                 life: 1.0,
               });
             }
 
-            const burstCount = tier === 3 ? 110 : tier === 2 ? 75 : 48;
+            const burstCount = tier === 3 ? 72 : tier === 2 ? 46 : 28;
             for (let i = 0; i < burstCount; i++) {
               const angle = (Math.PI * 2 * i) / burstCount + (Math.random() - 0.5) * 0.25;
-              const speed = 150 + Math.random() * (tier === 3 ? 420 : tier === 2 ? 340 : 260);
+              const speed = 140 + Math.random() * (tier === 3 ? 340 : tier === 2 ? 270 : 210);
               g.particles.push({
                 x: centerX,
                 y: centerY,
                 vx: Math.cos(angle) * speed,
                 vy: Math.sin(angle) * speed - 40,
-                size: 3.5 + Math.random() * (tier === 3 ? 4.5 : 3.2),
+                size: 3.2 + Math.random() * (tier === 3 ? 3.8 : 2.8),
                 color: palette[i % palette.length],
-                life: 1.15,
+                life: 1.1,
               });
             }
           }
+        } else if (
+          saveRef.current.settings.vfxEnabled &&
+          !reducedMotion &&
+          g.shakeTime <= 0.04
+        ) {
+          // Subtle micro screen-shake on every combo hit without obscuring falling notes
+          g.shakeDuration = type === 'PERFECT' ? 0.085 : type === 'GREAT' ? 0.075 : 0.065;
+          g.shakeTime = g.shakeDuration;
+          g.shakeIntensity = type === 'PERFECT' ? 2.0 : type === 'GREAT' ? 1.4 : 0.9;
         }
       }
     },
@@ -1257,9 +1270,9 @@ export default function App() {
       {screen === 'auth' && (
         <section
           aria-label="Player Registration"
-          className="relative z-10 w-full h-full flex items-center justify-center p-4 sm:p-6 overflow-y-auto"
+          className="relative z-10 w-full h-full flex items-center justify-center px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] sm:p-6 overflow-y-auto"
         >
-          <div className="w-full max-w-[460px] bg-[#101220]/92 border border-white/10 rounded-2xl p-5 sm:p-7 shadow-2xl backdrop-blur-md">
+          <div className="my-auto w-full max-w-[460px] bg-[#101220]/92 border border-white/10 rounded-2xl p-5 sm:p-7 shadow-2xl backdrop-blur-md">
             <div className="flex flex-col items-center text-center gap-2 mb-5">
               <div className="flex items-end gap-1.5 h-6" aria-hidden="true">
                 <div className="w-1.5 h-3 rounded bg-[#00f0ff] eq-bar-1" />
@@ -1483,9 +1496,9 @@ export default function App() {
       {screen === 'menu' && (
         <section
           aria-label="Main Menu"
-          className="relative z-10 w-full h-full flex items-center justify-center p-5 overflow-y-auto"
+          className="relative z-10 w-full h-full flex items-center justify-center px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] sm:p-6 overflow-y-auto"
         >
-          <div className="w-full max-w-[520px] flex flex-col items-center text-center gap-5">
+          <div className="my-auto w-full max-w-[520px] flex flex-col items-center text-center gap-4 sm:gap-5">
             {activeProfile && (
               <div className="w-full flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-xl bg-[#101220]/90 border border-white/10">
                 <div className="flex items-center gap-2.5 min-w-0 text-left">
@@ -1609,9 +1622,9 @@ export default function App() {
       {screen === 'songs' && (
         <section
           aria-label="Song Select"
-          className="relative z-10 w-full h-full flex items-center justify-center p-4 sm:p-6 overflow-y-auto"
+          className="relative z-10 w-full h-full flex items-center justify-center px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] sm:p-6 overflow-y-auto"
         >
-          <div className="w-full max-w-[780px] bg-[#101220]/90 border border-white/10 rounded-2xl p-5 sm:p-7 shadow-2xl backdrop-blur-md">
+          <div className="my-auto w-full max-w-[780px] bg-[#101220]/90 border border-white/10 rounded-2xl p-4 sm:p-7 shadow-2xl backdrop-blur-md">
             <div className="flex items-center justify-between gap-4 pb-4 mb-5 border-b border-white/10">
               <h2 className="text-xl sm:text-2xl font-bold tracking-wider">SONG SELECT</h2>
               <button
@@ -1762,9 +1775,9 @@ export default function App() {
       {screen === 'howto' && (
         <section
           aria-label="How To Play"
-          className="relative z-10 w-full h-full flex items-center justify-center p-4 sm:p-6 overflow-y-auto"
+          className="relative z-10 w-full h-full flex items-center justify-center px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] sm:p-6 overflow-y-auto"
         >
-          <div className="w-full max-w-[780px] bg-[#101220]/90 border border-white/10 rounded-2xl p-5 sm:p-7 shadow-2xl backdrop-blur-md">
+          <div className="my-auto w-full max-w-[780px] bg-[#101220]/90 border border-white/10 rounded-2xl p-4 sm:p-7 shadow-2xl backdrop-blur-md">
             <div className="flex items-center justify-between gap-4 pb-4 mb-5 border-b border-white/10">
               <h2 className="text-xl sm:text-2xl font-bold tracking-wider">HOW TO PLAY</h2>
               <button
@@ -1853,9 +1866,9 @@ export default function App() {
       {screen === 'settings' && (
         <section
           aria-label="Settings"
-          className="relative z-10 w-full h-full flex items-center justify-center p-4 sm:p-6 overflow-y-auto"
+          className="relative z-10 w-full h-full flex items-center justify-center px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] sm:p-6 overflow-y-auto"
         >
-          <div className="w-full max-w-[780px] bg-[#101220]/90 border border-white/10 rounded-2xl p-5 sm:p-7 shadow-2xl backdrop-blur-md">
+          <div className="my-auto w-full max-w-[780px] bg-[#101220]/90 border border-white/10 rounded-2xl p-4 sm:p-7 shadow-2xl backdrop-blur-md">
             <div className="flex items-center justify-between gap-4 pb-4 mb-5 border-b border-white/10">
               <h2 className="text-xl sm:text-2xl font-bold tracking-wider">SETTINGS</h2>
               <button
@@ -2153,48 +2166,74 @@ export default function App() {
           aria-label="Gameplay"
           className="relative z-10 w-full h-full flex flex-col overflow-hidden touch-none"
         >
-          <header className="w-full flex items-center justify-between gap-3 px-4 py-2.5 bg-gradient-to-b from-[#07080f]/95 to-[#07080f]/60 border-b border-white/10 shrink-0">
-            <div className="flex flex-col gap-1 min-w-[115px] max-w-[260px]">
-              <div className="text-sm font-bold text-white truncate">{selectedTrack.name}</div>
-              <div className="text-[11px] text-[#a2a9c8] font-mono tabular-nums">
-                {selectedDiff.toUpperCase()} · {formatTime(hud.songTime)} /{' '}
-                {formatTime(hud.duration)}
+          <header className="w-full flex flex-col gap-1.5 md:flex-row md:items-center md:justify-between md:gap-4 px-3 sm:px-4 pt-[max(0.5rem,env(safe-area-inset-top))] pb-2 md:py-2.5 bg-gradient-to-b from-[#07080f]/95 to-[#07080f]/65 border-b border-white/10 shrink-0">
+            {/* Row 1 on mobile (left + right): track meta + action buttons always visible */}
+            <div className="flex items-center justify-between gap-2 min-w-0 md:contents">
+              <div className="flex flex-col gap-1 min-w-0 flex-1 md:flex-none md:min-w-[150px] md:max-w-[260px]">
+                <div className="flex items-baseline justify-between gap-2 min-w-0 md:block">
+                  <span className="text-xs sm:text-sm font-bold text-white truncate">
+                    {selectedTrack.name}
+                  </span>
+                  <span className="text-[10px] sm:text-[11px] text-[#a2a9c8] font-mono tabular-nums whitespace-nowrap shrink-0 md:block">
+                    {selectedDiff.toUpperCase()} · {formatTime(hud.songTime)}/{formatTime(hud.duration)}
+                  </span>
+                </div>
+                <div className="w-full h-1 sm:h-1.5 bg-white/10 rounded overflow-hidden">
+                  <div
+                    className="h-full rounded transition-[width] duration-75 ease-linear"
+                    style={{
+                      width: `${Math.min(100, (hud.songTime / hud.duration) * 100).toFixed(2)}%`,
+                      background: 'linear-gradient(90deg, #00f0ff, #a855f7, #ff2a85)',
+                    }}
+                  />
+                </div>
               </div>
-              <div className="w-full h-1.5 bg-white/10 rounded overflow-hidden">
-                <div
-                  className="h-full rounded transition-[width] duration-75 ease-linear"
-                  style={{
-                    width: `${Math.min(100, (hud.songTime / hud.duration) * 100).toFixed(2)}%`,
-                    background: 'linear-gradient(90deg, #00f0ff, #a855f7, #ff2a85)',
-                  }}
-                />
+
+              <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 md:order-3">
+                <button
+                  type="button"
+                  onClick={handleToggleMute}
+                  className="px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-lg text-[10px] sm:text-xs font-bold tracking-wider bg-white/5 border border-white/10 hover:border-[#00f0ff] cursor-pointer whitespace-nowrap"
+                >
+                  {saveState.settings.muted ? 'UNMUTE' : 'MUTE'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => (isPaused ? void resumeGame() : void pauseGame())}
+                  className="px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-lg text-[10px] sm:text-xs font-bold tracking-wider bg-white/5 border border-white/10 hover:border-[#00f0ff] cursor-pointer whitespace-nowrap"
+                >
+                  PAUSE
+                </button>
               </div>
             </div>
 
-            <div className="flex items-center gap-4 sm:gap-6">
+            {/* Row 2 on mobile / Center on desktop: Score, Accuracy, Best Combo */}
+            <div className="w-full grid grid-cols-3 gap-2 md:w-auto md:flex md:items-center md:gap-6 md:order-2">
               <div className="flex flex-col items-center">
-                <span className="text-[10px] tracking-widest uppercase text-[#6c7496]">Score</span>
-                <span className="font-mono tabular-nums text-base sm:text-xl font-bold">
+                <span className="text-[9px] sm:text-[10px] tracking-widest uppercase text-[#6c7496] leading-tight">
+                  Score
+                </span>
+                <span className="font-mono tabular-nums text-sm sm:text-lg md:text-xl font-bold leading-tight">
                   {hud.score.toLocaleString()}
                 </span>
               </div>
               <div className="flex flex-col items-center">
-                <span className="text-[10px] tracking-widest uppercase text-[#6c7496]">
+                <span className="text-[9px] sm:text-[10px] tracking-widest uppercase text-[#6c7496] leading-tight">
                   Accuracy
                 </span>
-                <span className="font-mono tabular-nums text-base sm:text-xl font-bold">
+                <span className="font-mono tabular-nums text-sm sm:text-lg md:text-xl font-bold leading-tight">
                   {hud.accuracy.toFixed(1)}%
                 </span>
               </div>
               <div className="flex flex-col items-center">
-                <span className="text-[10px] tracking-widest uppercase text-[#6c7496]">
+                <span className="text-[9px] sm:text-[10px] tracking-widest uppercase text-[#6c7496] leading-tight">
                   Best Combo
                 </span>
-                <span className="font-mono tabular-nums text-base sm:text-xl font-bold">
+                <span className="font-mono tabular-nums text-sm sm:text-lg md:text-xl font-bold leading-tight">
                   {hud.bestCombo}
                 </span>
               </div>
-              <div className="hidden md:flex items-center gap-3 font-mono tabular-nums text-xs">
+              <div className="hidden lg:flex items-center gap-3 font-mono tabular-nums text-xs">
                 <div className="flex flex-col items-center">
                   <span className="text-[10px] text-[#6c7496]">PERF</span>
                   <span className="text-[#00f0ff] font-bold">{hud.counts.PERFECT}</span>
@@ -2212,23 +2251,6 @@ export default function App() {
                   <span className="text-[#fb7185] font-bold">{hud.counts.MISS}</span>
                 </div>
               </div>
-            </div>
-
-            <div className="flex items-center gap-2 shrink-0">
-              <button
-                type="button"
-                onClick={handleToggleMute}
-                className="px-3 py-2 rounded-lg text-xs font-bold tracking-wider bg-white/5 border border-white/10 hover:border-[#00f0ff] cursor-pointer"
-              >
-                {saveState.settings.muted ? 'UNMUTE' : 'MUTE'}
-              </button>
-              <button
-                type="button"
-                onClick={() => (isPaused ? void resumeGame() : void pauseGame())}
-                className="px-3 py-2 rounded-lg text-xs font-bold tracking-wider bg-white/5 border border-white/10 hover:border-[#00f0ff] cursor-pointer"
-              >
-                PAUSE
-              </button>
             </div>
           </header>
 
@@ -2265,7 +2287,7 @@ export default function App() {
             />
           </div>
 
-          <div className="w-full flex justify-center px-3 py-2.5 bg-[#07080f]/95 border-t border-white/10 shrink-0 touch-none">
+          <div className="w-full flex justify-center px-3 pt-2 pb-[max(0.625rem,env(safe-area-inset-bottom))] bg-[#07080f]/95 border-t border-white/10 shrink-0 touch-none">
             <div className="w-full max-w-[480px] grid grid-cols-4 gap-2">
               {saveState.settings.keyBindings.map((keyChar, laneIdx) => {
                 const active = laneActiveUi[laneIdx];
@@ -2302,7 +2324,7 @@ export default function App() {
                           }
                         : undefined
                     }
-                    className="h-16 sm:h-[62px] rounded-xl bg-[#131629] border border-white/15 text-[#a2a9c8] font-mono text-lg font-extrabold uppercase flex items-center justify-center touch-none transition-transform duration-75"
+                    className="h-14 sm:h-[62px] rounded-xl bg-[#131629] border border-white/15 text-[#a2a9c8] font-mono text-lg font-extrabold uppercase flex items-center justify-center touch-none transition-transform duration-75"
                   >
                     {formatKeyLabel(keyChar)}
                   </button>
@@ -2366,9 +2388,9 @@ export default function App() {
       {screen === 'result' && resultData && (
         <section
           aria-label="Results"
-          className="relative z-10 w-full h-full flex items-center justify-center p-4 sm:p-6 overflow-y-auto"
+          className="relative z-10 w-full h-full flex items-center justify-center px-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] sm:p-6 overflow-y-auto"
         >
-          <div className="w-full max-w-[640px] bg-[#101220]/90 border border-white/10 rounded-2xl p-5 sm:p-7 shadow-2xl backdrop-blur-md">
+          <div className="my-auto w-full max-w-[640px] bg-[#101220]/90 border border-white/10 rounded-2xl p-4 sm:p-7 shadow-2xl backdrop-blur-md">
             <div className="pb-4 mb-5 border-b border-white/10">
               <h2 className="text-2xl font-bold tracking-wider">{resultData.track.name}</h2>
               <p className="text-xs sm:text-sm text-[#a2a9c8] mt-1">
