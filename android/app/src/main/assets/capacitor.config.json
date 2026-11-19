@@ -1,0 +1,12 @@
+{
+	"appId": "com.beattherhythm.arcade",
+	"appName": "BEAT THE RHYTHM",
+	"webDir": "dist",
+	"android": {
+		"backgroundColor": "#07080f",
+		"allowMixedContent": false
+	},
+	"server": {
+		"androidScheme": "https"
+	}
+}

@@ -1,0 +1,6 @@
+{
+  "name": "BEAT THE RHYTHM",
+  "description": "Futuristic 4-lane web rhythm arcade game with Web Audio API synthesized music, real-time visualizer, and precision timing judgment.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
